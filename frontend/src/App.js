@@ -5,7 +5,7 @@ import { TaskProvider } from './context/TaskContext';
 import Layout from './components/Layout';
 import LoginPage from './pages/LoginPage';
 import TasksPage from './pages/TasksPage';
-// import TaskDetailPage from './pages/TaskDetailPage';
+import TaskDetailPage from './pages/TaskDetailPage';
 // import AdminPage from './pages/AdminPage';
 import NotFoundPage from './pages/NotFoundPage';
 import './styles/App.css';
@@ -39,7 +39,7 @@ function App() {
                 <Route path="/" element={<Navigate to="/tasks" replace />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/tasks" element={<TasksPage />} />
-                {/* <Route path="/tasks/:id" element={<TaskDetailPage />} /> */}
+                <Route path="/tasks/:id" element={<TaskDetailPage />} />
                 
                 {/* Защищенные маршруты */}
                 {/* <Route path="/admin/*" element={<AdminPage />} /> */}

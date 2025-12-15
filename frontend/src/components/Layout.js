@@ -28,11 +28,11 @@ const Layout = ({ children }) => {
                 🗂️ Задачи
               </Nav.Link>
               
-              {isAdmin() && (
+              {/* {isAdmin() && (
                 <Nav.Link as={Link} to="/admin" active={location.pathname.startsWith('/admin')}>
                   ⚙️ Админ-панель
                 </Nav.Link>
-              )}
+              )} */}
             </Nav>
             
             <Nav>

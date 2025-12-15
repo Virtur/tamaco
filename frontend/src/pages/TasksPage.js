@@ -49,18 +49,19 @@ const TasksPage = () => {
   };
 
   const handleCreateTask = async (taskData) => {
-    const result = await createTask(taskData);
-    if (result.success) {
-      setShowCreateModal(false);
-    }
+    try {
+      await createTask(taskData);
+      setShowCreateModal(false)
+    } catch (error) {
+    } 
   };
 
   const handleUpdateTask = async (taskData) => {
-    const result = await updateTask(editingTask.id, taskData);
-    if (result.success) {
+    try {
+      updateTask(editingTask.id, taskData);
       setShowEditModal(false);
-      setEditingTask(null);
-    }
+    } catch (error) {
+    } 
   };
 
   const handleFilter = async (filters) => {
