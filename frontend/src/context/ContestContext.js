@@ -1,0 +1,220 @@
+import React, { createContext, useState, useContext, useCallback, useEffect } from 'react';
+import axios from 'axios';
+
+// URL API
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+
+// 1. Создаем контекст ([хранилище для данных, которые будем передавать по всему приложению через useContext])
+const ContestContext = createContext();
+
+// 2. Создаем Provider (функция помещения данных в хранилище (Context))
+export const ContestProvider = ({ children }) => { // children - это ВСЁ приложение, которое нужно обернуть в контекст, оборачивать будем в App.js
+  // Состояния для хранения данных
+  const [contests, setContests] = useState([]);
+  const [selectedContest, setSelectedContest] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  
+// 3. Функция для загрузки всех контестов
+  const fetchContests = useCallback(async () => {
+
+    // Не начинаем новую загрузку контестов, если уже загружается
+    if (loading) {
+      console.log('Загрузка уже идет, пропускаем');
+      return;
+    }
+    console.log('🔄 Загрузка контестов...');
+    
+    // патерн для обработки асинхронных операций
+    setLoading(true); // показать спиннер (загрузку)
+    setError(null); // сбросить ошибки
+    
+    try {
+      // получаем данные
+      const response = await axios.get(`${API_URL}/contests`);
+      console.log(response.data.success , response.data);
+      // записываем данные в массив состояния
+      if (response.data.success) {
+        console.log(`✅ Загружено ${response.data.contest?.length || 0} контестов`); // отладка
+        setContests(response.data.contests || []);
+      }
+    } catch (err) {
+      const errorMsg = err.response?.data?.error || 'Ошибка загрузки контестов';
+      setError(errorMsg);
+      console.error('Ошибка загрузки контестов:', err);
+    } finally {
+      setLoading(false); // скрыть спиннер загрузки
+    }
+  }, 
+  []); // Пустой массив зависимостей для useCallback
+
+  // 4. Функция для загрузки одного контеста по ID
+  const fetchContestById = async (id) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const response = await axios.get(`${API_URL}/contests/${id}`);
+      
+      if (response.data.success) {
+        setSelectedContest(response.data.data);
+        return response.data.data;
+      }
+    } catch (err) {
+      const errorMsg = err.response?.data?.error || 'Ошибка загрузки контеста';
+      setError(errorMsg);
+      console.error('Ошибка загрузки контеста:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 5. Функция для создания контеста
+  const createContest = async (contestData) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const response = await axios.post(`${API_URL}/contests`, contestData);
+      
+      if (response.data.success) {
+        // После создания перезагружаем список
+        await fetchContests();
+        return response.data.data;
+      }
+    } catch (err) {
+      const errorMsg = err.response?.data?.error || 'Ошибка создания контеста';
+      setError(errorMsg);
+      console.error('Ошибка создания контеста:', err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 6. Функция для обновления контеста
+  const updateContest = async (id, updates) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const response = await axios.put(`${API_URL}/contests/${id}`, updates);
+      
+      if (response.data.success) {
+        // Обновляем выбранный контест если она редактируется
+        if (selectedContest?.id === id) {
+          setSelectedContest(response.data.data);
+        }
+        // Обновляем список контестов
+        await fetchContests();
+        return response.data.data;
+      }
+    } catch (err) {
+      const errorMsg = err.response?.data?.error || 'Ошибка обновления контеста';
+      setError(errorMsg);
+      console.error('Ошибка обновления контеста:', err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 7. Функция для удаления контеста
+  const deleteContest = async (id) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const response = await axios.delete(`${API_URL}/contests/${id}`);
+      
+      if (response.data.success) {
+        // Удаляем из локального состояния
+        setContests(contests.filter(contest => contest.id !== id));
+        // Сбрасываем выбранный контест если она удалена
+        if (selectedContest?.id === id) {
+          setSelectedContest(null);
+        }
+        return true;
+      }
+    } catch (err) {
+      const errorMsg = err.response?.data?.error || 'Ошибка удаления контеста';
+      setError(errorMsg);
+      console.error('Ошибка удаления контеста:', err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 8. Функция для фильтрации контестов
+  const filterContests = async (filters) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const response = await axios.get(`${API_URL}/contests/filter/by-difficulty`, {
+        params: filters
+      });
+      
+      if (response.data.success) {
+        setContests(response.data.data || []);
+        return response.data.data;
+      }
+    } catch (err) {
+      const errorMsg = err.response?.data?.error || 'Ошибка фильтрации';
+      setError(errorMsg);
+      console.error('Ошибка фильтрации:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 9. Все данные и функции, которые будут доступны через контекст
+  const value = {
+    // Данные
+    contests,
+    selectedContest,
+    loading,
+    error,
+    
+    // Функции (методы)
+    fetchContests,
+    fetchContestById,
+    createContest,
+    updateContest,
+    deleteContest,
+    filterContests,
+    
+    // Сеттеры для состояний
+    setSelectedContest,
+    setError: (msg) => setError(msg),
+    clearError: () => setError(null),
+  };
+
+  // 10. При первой загрузке получаем контест (только для тестирования)
+  // useEffect(() => {
+  //   fetchContests();
+  // }, [fetchContests]);
+
+  // 11. Возвращаем провайдер с данными
+  // ContestContext.Provider делает данные доступными для ЛЮБОГО компонента внутри {children}, в нашем случае {children} все приложение 
+  return (
+    <ContestContext.Provider value={value}>
+      {children}
+    </ContestContext.Provider>
+  );
+};
+
+// 12. Создаем кастомный хук для удобства использования
+export const useContests = () => {
+  const context = useContext(ContestContext);
+  
+  if (!context) {
+    throw new Error('useContests должен использоваться внутри ContestProvider');
+  }
+  
+  return context;
+};
+
+// 13. Экспортируем контекст (на случай если понадобится напрямую)
+export default ContestContext;
